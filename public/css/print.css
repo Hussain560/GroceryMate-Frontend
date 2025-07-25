@@ -1,0 +1,44 @@
+@media print {
+  @page {
+    margin: 0.5cm;
+    size: auto;
+  }
+
+  body {
+    margin: 0;
+    padding: 15px;
+    font-size: 12pt;
+    font-family: Arial, sans-serif;
+  }
+
+  .modal-footer,
+  .btn-close,
+  .no-print {
+    display: none !important;
+  }
+
+  .table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .table th,
+  .table td {
+    padding: 4px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+  }
+
+  .text-end {
+    text-align: right !important;
+  }
+
+  .text-center {
+    text-align: center !important;
+  }
+
+  .currency-icon {
+    height: 12px !important;
+    margin-right: 2px !important;
+  }
+}

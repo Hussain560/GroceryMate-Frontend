@@ -1,0 +1,305 @@
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import api from '../api/api';
+import authService from '../services/authService';
+import BarcodeScanner from './BarcodeScanner';
+import useCart from '../hooks/useCart';
+import { getUserRole } from '../utils/auth';
+import Price from './Price';
+
+export default function Sales() {
+  const [sales, setSales] = useState([]);
+  const [sale, setSale] = useState({
+    items: [],
+    subtotalBeforeDiscount: 0,
+    totalVATAmount: 0,
+    finalTotal: 0
+  });
+  const [showScanner, setShowScanner] = useState(false);
+  const [cart, setCart] = useState([]);
+  const [paymentMethod, setPaymentMethod] = useState('cash');
+  const [cashAmount, setCashAmount] = useState('');
+  const [changeAmount, setChangeAmount] = useState('');
+  const [totals, setTotals] = useState({
+    subtotalBeforeDiscount: 0,
+    totalDiscountPercentage: 0,
+    totalDiscountAmount: 0,
+    subtotalAfterDiscount: 0,
+    vatAmount: 0,
+    finalTotal: 0
+  });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [page, setPage] = useState(1);
+  const [limit] = useState(10);
+  const [totalPages, setTotalPages] = useState(1);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [dateRange, setDateRange] = useState({ from: '', to: '' });
+  const userRole = getUserRole();
+  const isManager = userRole === 'Manager';
+
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchSales = async () => {
+      try {
+        setLoading(true);
+        let url = `/sales?page=${page}&limit=${limit}`;
+        if (searchTerm) url += `&search=${searchTerm}`;
+        if (dateRange.from) url += `&from=${dateRange.from}`;
+        if (dateRange.to) url += `&to=${dateRange.to}`;
+
+        const response = await api.get(url);
+        setSales(response.data.sales);
+        setTotalPages(Math.ceil(response.data.total / limit));
+      } catch (error) {
+        setError('Failed to fetch sales');
+        console.error('Error:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchSales();
+  }, [page, searchTerm, dateRange]);
+
+  const handleProductScan = (product) => {
+    const newItem = {
+      productID: product.id,
+      quantity: 1,
+      unitPrice: product.price,
+      discountPercentage: product.discountPercentage || 0,
+      subtotal: product.price
+    };
+
+    setSale(prev => ({
+      ...prev,
+      items: [...prev.items, newItem]
+    }));
+  };
+
+  const handleQuantityChange = (index, value) => {
+    const newItems = [...sale.items];
+    newItems[index].quantity = parseInt(value, 10);
+    newItems[index].subtotal = newItems[index].unitPrice * newItems[index].quantity;
+    setSale(prev => ({
+      ...prev,
+      items: newItems
+    }));
+  };
+
+  const handleRemoveItem = (index) => {
+    const newItems = sale.items.filter((_, i) => i !== index);
+    setSale(prev => ({
+      ...prev,
+      items: newItems
+    }));
+  };
+
+  const calculateTotals = (items) => {
+    const subtotalBeforeDiscount = items.reduce((sum, item) => sum + item.subtotal, 0);
+    const totalDiscountAmount = items.reduce((sum, item) => sum + (item.subtotal * (item.discountPercentage / 100)), 0);
+    const subtotalAfterDiscount = subtotalBeforeDiscount - totalDiscountAmount;
+    const vatAmount = subtotalAfterDiscount * 0.15;
+    const finalTotal = subtotalAfterDiscount + vatAmount;
+
+    setSale(prev => ({
+      ...prev,
+      subtotalBeforeDiscount,
+      totalDiscountAmount,
+      subtotalAfterDiscount,
+      totalVATAmount: vatAmount,
+      finalTotal
+    }));
+  };
+
+  const handleSubmit = async () => {
+    try {
+      const response = await api.post('/sales', {
+        items: sale.items.map(item => ({
+          productID: item.productID,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          discountPercentage: item.discountPercentage,
+          subtotal: item.subtotal
+        })),
+        paymentMethod,
+        cashReceived: parseFloat(cashAmount),
+        change: parseFloat(changeAmount),
+        subtotalBeforeDiscount: sale.subtotalBeforeDiscount,
+        totalDiscountPercentage: (sale.totalDiscountAmount / sale.subtotalBeforeDiscount) * 100,
+        totalDiscountAmount: sale.totalDiscountAmount,
+        subtotalAfterDiscount: sale.subtotalAfterDiscount,
+        totalVATAmount: sale.totalVATAmount,
+        VATPercentage: 15,
+        finalTotal: sale.finalTotal
+      });
+
+      if (response.data.success) {
+        // Optionally, you can redirect or show a success message
+        navigate('/sales/invoice/' + response.data.saleId);
+      } else {
+        throw new Error(response.data.error || 'Sale failed');
+      }
+    } catch (error) {
+      console.error('Error completing sale:', error);
+    }
+  };
+
+  const handleScan = (product) => {
+    if (!product) return;
+    
+    const cartItem = {
+      productId: product.id,
+      name: product.name,
+      price: product.price,
+      quantity: 1,
+      discountPercentage: product.discountPercentage || 0,
+      subtotal: product.price
+    };
+
+    setCart(prevCart => [...prevCart, cartItem]);
+    calculateTotals([...cart, cartItem]);
+  };
+
+  const handleSearch = (e) => {
+    setSearchTerm(e.target.value);
+    setPage(1);
+  };
+
+  const handleDateChange = (type, value) => {
+    setDateRange(prev => ({ ...prev, [type]: value }));
+    setPage(1);
+  };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="container mx-auto p-4">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold">Sales History</h1>
+        <Link
+          to="/sales/create"
+          className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors"
+        >
+          New Sale
+        </Link>
+      </div>
+
+      {/* Filters */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <input
+          type="text"
+          placeholder="Search by ID or Customer..."
+          value={searchTerm}
+          onChange={handleSearch}
+          className="p-2 border rounded-lg"
+        />
+        <input
+          type="date"
+          value={dateRange.from}
+          onChange={(e) => handleDateChange('from', e.target.value)}
+          className="p-2 border rounded-lg"
+        />
+        <input
+          type="date"
+          value={dateRange.to}
+          onChange={(e) => handleDateChange('to', e.target.value)}
+          className="p-2 border rounded-lg"
+        />
+        <button
+          onClick={() => fetchSales()}
+          className="bg-gray-100 hover:bg-gray-200 p-2 rounded-lg transition-colors"
+        >
+          <i className="fas fa-sync-alt mr-2"></i>
+          Refresh
+        </button>
+      </div>
+
+      {/* Error Alert */}
+      {error && (
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+          {error}
+        </div>
+      )}
+
+      {/* Sales Table */}
+      <div className="bg-white rounded-lg shadow overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase">Sale ID</th>
+                <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase">Date</th>
+                <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase">Total</th>
+                <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase">Payment</th>
+                <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase hidden md:table-cell">Customer</th>
+                {isManager && (
+                  <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase">Actions</th>
+                )}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200">
+              {sales.map(sale => (
+                <tr key={sale.id} className="hover:bg-gray-50">
+                  <td className="px-6 py-4">{sale.invoiceNumber}</td>
+                  <td className="px-6 py-4">{new Date(sale.date).toLocaleDateString()}</td>
+                  <td className="px-6 py-4">
+                    <Price amount={sale.finalTotal} />
+                  </td>
+                  <td className="px-6 py-4">{sale.paymentMethod}</td>
+                  <td className="px-6 py-4 hidden md:table-cell">{sale.customerName || '-'}</td>
+                  {isManager && (
+                    <td className="px-6 py-4">
+                      <Link
+                        to={`/sales/${sale.id}`}
+                        className="text-blue-500 hover:text-blue-700"
+                      >
+                        <i className="fas fa-eye mr-2"></i>
+                        View Details
+                      </Link>
+                    </td>
+                  )}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Pagination */}
+        <div className="bg-gray-50 px-6 py-3 flex items-center justify-between border-t">
+          <button
+            onClick={() => setPage(p => Math.max(1, p - 1))}
+            disabled={page === 1}
+            className={`px-4 py-2 rounded-lg ${
+              page === 1 
+                ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+                : 'bg-white text-gray-700 hover:bg-gray-50'
+            }`}
+          >
+            Previous
+          </button>
+          <span className="text-sm text-gray-700">
+            Page {page} of {totalPages}
+          </span>
+          <button
+            onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+            disabled={page === totalPages}
+            className={`px-4 py-2 rounded-lg ${
+              page === totalPages 
+                ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+                : 'bg-white text-gray-700 hover:bg-gray-50'
+            }`}
+          >
+            Next
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
