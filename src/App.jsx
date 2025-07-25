@@ -19,7 +19,7 @@ import Users from './components/Users';
 import UserAdd from './components/UserAdd';
 import UserEdit from './components/UserEdit';
 
-
+// Importing styles
 // Set Modal app element once at the app root
 if (typeof window !== 'undefined') {
   Modal.setAppElement('#root');
