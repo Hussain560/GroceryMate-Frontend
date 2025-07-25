@@ -1,0 +1,15 @@
+@startuml
+actor Manager
+actor Employee
+
+Manager --> (Record Sale)
+Manager --> (Update Sale)
+Manager --> (Search Sale)
+Manager --> (Print Invoice)
+Manager --> (Archive Sale)
+
+Employee --> (Record Sale)
+Employee --> (Search Sale)
+Employee --> (Print Invoice)
+Employee --> (Archive Sale)
+@enduml

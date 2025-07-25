@@ -1,0 +1,15 @@
+@startuml
+actor Manager
+actor Employee
+
+Manager --> (Record Product)
+Manager --> (Update Stock)
+Manager --> (Search Product)
+Manager --> (Print Low Stock)
+Manager --> (Archive Product)
+
+Employee --> (Record Product)
+Employee --> (Update Stock)
+Employee --> (Search Product)
+Employee --> (Print Low Stock)
+@enduml
