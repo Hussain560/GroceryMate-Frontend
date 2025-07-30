@@ -56,18 +56,48 @@ This frontend connects to a backend ASP.NET Core API and provides user authentic
 
 ```
 src
-├── assets/            # Images, fonts, and other static assets
-├── components/        # Reusable components (e.g., Button, Input, Modal)
-├── context/           # Context providers (e.g., CartContext)
-├── api/               # Axios API client
-├── utils/             # Utility functions and constants
-├── main.jsx           # App entry point
-├── App.jsx            # Main app component with routing
-├── index.css          # Global styles
+├── api/
+│   └── api.js
+├── assets/
+│   └── react.svg
+├── components/
+│   ├── Dashboard.jsx
+│   ├── Inventory.jsx
+│   ├── InventoryAdd.jsx
+│   ├── InventoryEdit.jsx
+│   ├── InventoryLowstock.jsx
+│   ├── InventoryTransactions.jsx
+│   ├── Login.jsx
+│   ├── Modal.jsx
+│   ├── Navbar.jsx
+│   ├── Pagination.jsx
+│   ├── Price.jsx
+│   ├── ProtectedRoute.jsx
+│   ├── SaleDetails.jsx
+│   ├── Sales.jsx
+│   ├── SalesCreate.jsx
+│   ├── UserAdd.jsx
+│   ├── UserEdit.jsx
+│   └── Users.jsx
+├── context/
+│   └── CartContext.jsx
+├── main.jsx
+├── App.jsx
+├── index.css
+├── utils/
+│   ├── auth.js
+│   └── helpers.js
+```
 public/
-├── sounds/            # Beep sound for barcode scan (optional)
-docs/                  # Documentation and analysis
-.env.example           # Example environment variables
+├── sounds/
+│   └── beep.mp3
+docs/
+├── screenshots/
+│   ├── login.png
+│   ├── dashboard.png
+│   ├── inventory.png
+│   └── sales.png
+.env.example
 ```
 
 ---
