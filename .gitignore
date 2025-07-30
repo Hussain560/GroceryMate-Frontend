@@ -22,3 +22,6 @@ lerna-debug.log*
 logs
 *.sln
 *.sw?
+*.sketch
+*.psd
+
