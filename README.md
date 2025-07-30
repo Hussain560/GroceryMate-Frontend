@@ -88,6 +88,7 @@ src
 │   ├── auth.js
 │   └── helpers.js
 ```
+...
 public/
 ├── sounds/
 │   └── beep.mp3
