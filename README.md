@@ -61,31 +61,53 @@ src
 ├── assets/
 │   └── react.svg
 ├── components/
-│   ├── Dashboard.jsx
-│   ├── Inventory.jsx
-│   ├── InventoryAdd.jsx
-│   ├── InventoryEdit.jsx
-│   ├── InventoryLowstock.jsx
-│   ├── InventoryTransactions.jsx
-│   ├── Login.jsx
-│   ├── Modal.jsx
-│   ├── Navbar.jsx
-│   ├── Pagination.jsx
-│   ├── Price.jsx
-│   ├── ProtectedRoute.jsx
-│   ├── SaleDetails.jsx
-│   ├── Sales.jsx
-│   ├── SalesCreate.jsx
-│   ├── UserAdd.jsx
-│   ├── UserEdit.jsx
-│   └── Users.jsx
+│   ├── Dashboard/
+│   │   ├── ManagerDashboard.jsx
+│   │   ├── EmployeeDashboard.jsx
+│   │   ├── index.js
+|   |   └── Charts/
+|   ├── common/
+|   |
+│   ├── Inventory/
+│   │   ├── InventoryList.jsx
+│   │   ├── InventoryAdd.jsx
+│   │   ├── InventoryEdit.jsx
+│   │   ├── Restock.jsx
+│   │   ├── Spoilage.jsx
+│   │   ├── InventoryCount.jsx
+│   │   ├── StockHistory.jsx
+│   │   ├── Suppliers.jsx
+│   │   └── index.js
+│   ├── Reports/
+│   │   ├── SalesReport.jsx
+│   │   ├── InventoryReport.jsx
+│   │   ├── PaymentsReport.jsx
+│   │   ├── SupplierReport.jsx
+│   │   └── index.js
+│   ├── Purchasing/
+│   │   ├── PurchaseOrders.jsx
+│   │   ├── Receiving.jsx
+│   │   └── index.js
+│   ├── Manage/
+│   │   ├── Users.jsx
+│   │   ├── Roles.jsx
+│   │   ├── Discounts.jsx
+│   │   ├── Promotions.jsx
+│   │   ├── Branches.jsx
+│   │   ├── Devices.jsx
+│   │   ├── Login.jsx
+│   │   └── index.js
+│   └── 
 ├── context/
-│   └── CartContext.jsx
+│   └── 
 ├── main.jsx
 ├── App.jsx
 ├── index.css
+├── routes.js
+├── navConfig.js
 ├── utils/
 │   ├── auth.js
+│   ├── dateUtils.js
 │   └── helpers.js
 
 public/
