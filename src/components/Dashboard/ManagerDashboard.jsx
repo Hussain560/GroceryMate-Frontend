@@ -70,7 +70,7 @@ const ManagerDashboard = () => {
         console.log('Fetching dashboard data with params:', params.toString());
 
         const response = await api.get(`/dashboard/overview?${params.toString()}`);
-        console.log('Received dashboard data:', response.data);
+        console.log('Dashboard data:', response.data);
         
         if (response.data?.success) {
           setDashboardData(response.data.data || {});
@@ -87,6 +87,44 @@ const ManagerDashboard = () => {
 
     fetchData();
   }, [selectedPeriod, date, selectedYear, selectedMonth, startDate, endDate, selectedStockFilter]);
+
+  // Helper function to process history data
+  const processHistoryData = (historyArray) => {
+    if (!Array.isArray(historyArray) || historyArray.length === 0) {
+      return { labels: [], data: [] };
+    }
+
+    const labels = historyArray.map(item => 
+      item.date || item.hour || item.month || item.year || 'N/A'
+    );
+    const data = historyArray.map(item => item.value || 0);
+
+    return { labels, data };
+  };
+
+  // Helper function to create chart data for metrics
+  const createMetricChartData = (historyArray, label, color = 'rgba(142, 68, 173, 1)') => {
+    const { labels, data } = processHistoryData(historyArray);
+    
+    return {
+      labels,
+      datasets: [{
+        label,
+        data,
+        fill: true,
+        backgroundColor: 'rgba(142, 68, 173, 0.2)',
+        borderColor: color,
+        borderWidth: 2,
+        pointStyle: 'circle',
+        pointRadius: 5,
+        pointHoverRadius: 7,
+        pointBackgroundColor: color,
+        pointBorderColor: '#fff',
+        pointBorderWidth: 2,
+        tension: 0,
+      }]
+    };
+  };
 
   // Helper function for chart data
   const getLineChartData = (metric) => {
@@ -219,54 +257,54 @@ const ManagerDashboard = () => {
     return Array(labels.length).fill(Number(fallbackValue));
   };
 
-  // General cards config with chart data
+  // General cards config with updated metrics
   const generalCards = [
     {
       title: 'Sales Transactions',
       value: dashboardData.SalesTransactions || 0,
-      metric: 'SalesTransactions',
+      historyKey: 'SalesTransactionsHistory',
       color: 'rgba(142, 68, 173, 1)',
     },
     {
       title: 'Net Sales (SAR)',
       value: (dashboardData.NetSales || 0).toFixed(2),
-      metric: 'NetSales',
+      historyKey: 'NetSalesHistory',
       color: 'rgba(142, 68, 173, 1)',
     },
     {
       title: 'Gross Profit (SAR)',
       value: (dashboardData.GrossProfit || 0).toFixed(2),
-      metric: 'GrossProfit',
+      historyKey: 'GrossProfitHistory',
       color: 'rgba(142, 68, 173, 1)',
     },
     {
       title: 'Discount Amount (SAR)',
       value: (dashboardData.DiscountAmount || 0).toFixed(2),
-      metric: 'DiscountAmount',
+      historyKey: 'DiscountAmountHistory',
       color: 'rgba(142, 68, 173, 1)',
     },
     {
       title: 'Return Amount (SAR)',
       value: (dashboardData.ReturnAmount || 0).toFixed(2),
-      metric: 'ReturnAmount',
+      historyKey: 'ReturnAmountHistory',
       color: 'rgba(142, 68, 173, 1)',
     },
     {
       title: 'Average Transaction Value (SAR)',
       value: (dashboardData.AverageTransactionValue || 0).toFixed(2),
-      metric: 'AverageTransactionValue',
+      historyKey: 'AverageTransactionValueHistory',
       color: 'rgba(142, 68, 173, 1)',
     },
     {
       title: 'Sales Growth Rate (%)',
       value: (dashboardData.SalesGrowthRate || 0).toFixed(2),
-      metric: 'SalesGrowthRate',
+      historyKey: 'SalesGrowthRateHistory',
       color: 'rgba(142, 68, 173, 1)',
     },
     {
       title: 'Operational Efficiency (%)',
       value: (dashboardData.OperationalEfficiencyRatio || 0).toFixed(2),
-      metric: 'OperationalEfficiencyRatio',
+      historyKey: 'OperationalEfficiencyRatioHistory',
       color: 'rgba(142, 68, 173, 1)',
     },
   ];
@@ -280,7 +318,7 @@ const ManagerDashboard = () => {
       tooltip: { enabled: true }
     },
     elements: {
-      line: { tension: 0 }, // straight lines
+      line: { tension: 0 },
       point: { radius: 5, hoverRadius: 7, pointStyle: 'circle' }
     },
     scales: {
@@ -289,8 +327,8 @@ const ManagerDashboard = () => {
     }
   };
 
-  // Chart options for other charts (including Hourly Sales)
-  const chartOptions = {
+  // Chart options for hourly sales chart
+  const hourlySalesChartOptions = {
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
@@ -305,13 +343,13 @@ const ManagerDashboard = () => {
       }
     },
     elements: {
-      line: { tension: 0 }, // straight lines for all charts
+      line: { tension: 0 },
       point: { radius: 5, hoverRadius: 7, pointStyle: 'circle' }
     },
     scales: {
       x: {
         grid: { display: true },
-        ticks: { maxRotation: 45, minRotation: 45 }
+        ticks: { maxRotation: 45, minRotation: 45, maxTicksLimit: 12 }
       },
       y: {
         grid: { display: true },
@@ -322,6 +360,32 @@ const ManagerDashboard = () => {
         beginAtZero: true
       }
     }
+  };
+
+  // Create hourly sales chart data
+  const createHourlySalesChartData = () => {
+    const hourlySales = dashboardData.HourlySales || [];
+    const labels = hourlySales.map(h => `${h.Hour || 0}:00`);
+    const data = hourlySales.map(h => h.Amount || 0);
+
+    return {
+      labels,
+      datasets: [{
+        label: 'Sales Amount',
+        data,
+        fill: true,
+        backgroundColor: 'rgba(142, 68, 173, 0.2)',
+        borderColor: 'rgba(142, 68, 173, 1)',
+        borderWidth: 2,
+        pointStyle: 'circle',
+        pointRadius: 5,
+        pointHoverRadius: 7,
+        pointBackgroundColor: 'rgba(142, 68, 173, 1)',
+        pointBorderColor: '#fff',
+        pointBorderWidth: 2,
+        tension: 0,
+      }]
+    };
   };
 
   // Loading spinner component
@@ -581,51 +645,32 @@ const ManagerDashboard = () => {
             <>
               {/* 8 KPI Cards with LineChart */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-                {generalCards.map((card, idx) => (
-                  <div key={card.title} className="bg-white p-4 rounded-lg shadow-md flex flex-col">
-                    <h2 className="text-lg font-sans text-gray-700 mb-2">{card.title}</h2>
-                    <p className="text-3xl font-bold mb-2">{card.value}</p>
-                    <div className="h-32">
-                      <LineChart
-                        data={{
-                          labels: getDynamicLabels(),
-                          datasets: [{
-                            label: card.title,
-                            data: getMetricTrend(card.metric.replace(/History$/, ''), card.value),
-                            fill: true,
-                            backgroundColor: 'rgba(142, 68, 173, 0.2)',
-                            borderColor: 'rgba(142, 68, 173, 1)',
-                            borderWidth: 2,
-                            pointStyle: 'circle',
-                            pointRadius: 5,
-                            pointHoverRadius: 7,
-                            pointBackgroundColor: 'rgba(142, 68, 173, 1)',
-                            pointBorderColor: '#fff',
-                            pointBorderWidth: 2,
-                            tension: 0,
-                          }]
-                        }}
-                        options={cardChartOptions}
-                      />
+                {generalCards.map((card, idx) => {
+                  const historyData = dashboardData[card.historyKey] || [];
+                  const chartData = createMetricChartData(historyData, card.title, card.color);
+                  
+                  return (
+                    <div key={card.title} className="bg-white p-4 rounded-lg shadow-md flex flex-col">
+                      <h2 className="text-lg font-sans text-gray-700 mb-2">{card.title}</h2>
+                      <p className="text-3xl font-bold mb-2">{card.value}</p>
+                      <div className="h-32">
+                        <LineChart
+                          data={chartData}
+                          options={cardChartOptions}
+                        />
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
-              {/* Hourly Sales Chart (straight line) */}
+              {/* Hourly Sales Chart (full width) */}
               <div className="bg-white p-4 rounded-lg shadow-md mb-6">
                 <h2 className="text-lg font-sans text-gray-700 mb-4">Hourly Sales</h2>
                 <div className="h-64">
                   <LineChart
-                    data={getLineChartData('HourlySales')}
-                    options={{
-                      ...chartOptions,
-                      elements: { line: { tension: 0 } }, // straight line
-                      scales: {
-                        ...chartOptions.scales,
-                        x: { ...chartOptions.scales.x, ticks: { maxTicksLimit: 12 } }
-                      }
-                    }}
+                    data={createHourlySalesChartData()}
+                    options={hourlySalesChartOptions}
                   />
                 </div>
               </div>
